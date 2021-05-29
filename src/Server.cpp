@@ -149,6 +149,7 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #include <algorithm>
+#include <iostream>
 
 #include "Server.h"
 #include "ServerUtils.h"
@@ -280,7 +281,36 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 		.gattCharacteristicEnd()
 
 	.gattServiceEnd()
+	// Nordic UART Service (6e400001-b5a3-f393-e0a9-e50e24dcca9e)
+.gattServiceBegin("LED_Communication", "923574a3-41a8-4aea-ae77-7ce14d9dca3b")
 
+	// Characteristic: String value (custom: 923574a3-41a8-4aea-ae77-7ce14d9dca3b)
+	.gattCharacteristicBegin("LED_RX", "923574a3-41a8-4aea-ae77-7ce14d9dca3b", {"write-without-response","write"})
+
+		// Standard characteristic "WriteValue" method call
+		.onWriteValue(CHARACTERISTIC_METHOD_CALLBACK_LAMBDA
+		{
+			// Update the text string value
+			GVariant *pAyBuffer = g_variant_get_child_value(pParameters, 0);
+			std::cout << "GOT STRING: " << Utils::stringFromGVariantByteArray(pAyBuffer).c_str() << std::endl;
+
+			//self.setDataPointer("uart_rx", Utils::stringFromGVariantByteArray(pAyBuffer).c_str());
+
+			// Since all of these methods (onReadValue, onWriteValue, onUpdateValue) are all part of the same
+			// Characteristic interface (which just so happens to be the same interface passed into our self
+			// parameter) we can use that parameter to call our own onUpdatedValue method
+			self.callOnUpdatedValue(pConnection, pUserData);
+
+			// Note: Even though the WriteValue method returns void, it's important to return like this, so that a
+			// dbus "method_return" is sent, otherwise the client gets an error (ATT error code 0x0e"unlikely").
+			// Only "write-without-response" works without this
+			self.methodReturnVariant(pInvocation, NULL);
+		})
+	.gattCharacteristicEnd()
+.gattServiceEnd();
+	// LedDataService
+
+/*
 	// Battery Service (0x180F)
 	//
 	// This is a fake battery service that conforms to org.bluetooth.service.battery_service. For details, see:
@@ -320,7 +350,8 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 
 		.gattCharacteristicEnd()
 	.gattServiceEnd()
-
+*/
+/*
 	// Current Time Service (0x1805)
 	//
 	// This is a time service that conforms to org.bluetooth.service.current_time. For details, see:
@@ -368,7 +399,8 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 
 		.gattCharacteristicEnd()
 	.gattServiceEnd()
-
+*/
+    /*
 	// Custom read/write text string service (00000001-1E3C-FAD4-74E2-97A033F1BFAA)
 	//
 	// This service will return a text string value (default: 'Hello, world!'). If the text value is updated, it will notify
@@ -430,13 +462,14 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 
 		.gattCharacteristicEnd()
 	.gattServiceEnd()
-
+*/
 	// Custom ASCII time string service
 	//
 	// This service will simply return the result of asctime() of the current local time. It's a nice test service to provide
 	// a new value each time it is read.
 
 	// Service: ASCII Time (custom: 00000001-1E3D-FAD4-74E2-97A033F1BFEE)
+	/*
 	.gattServiceBegin("ascii_time", "00000001-1E3D-FAD4-74E2-97A033F1BFEE")
 
 		// Characteristic: ASCII Time String (custom: 00000002-1E3D-FAD4-74E2-97A033F1BFEE)
@@ -468,7 +501,7 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 			.gattDescriptorEnd()
 
 		.gattCharacteristicEnd()
-	.gattServiceEnd()
+	.gattServiceEnd()*/
 
 	// Custom CPU information service (custom: 0000B001-1E3D-FAD4-74E2-97A033F1BFEE)
 	//
@@ -476,6 +509,7 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 	// CPU. It may not work on all platforms, but it does provide yet another example of how to do things.
 
 	// Service: CPU Information (custom: 0000B001-1E3D-FAD4-74E2-97A033F1BFEE)
+	/*
 	.gattServiceBegin("cpu", "0000B001-1E3D-FAD4-74E2-97A033F1BFEE")
 
 		// Characteristic: CPU Count (custom: 0000B002-1E3D-FAD4-74E2-97A033F1BFEE)
@@ -531,7 +565,7 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 
 		.gattCharacteristicEnd()
 	.gattServiceEnd(); // << -- NOTE THE SEMICOLON
-
+*/
 	//  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 	//                                                ____ _____ ___  _____
 	//                                               / ___|_   _/ _ \|  _  |
