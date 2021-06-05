@@ -150,6 +150,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <vector>
 
 #include "Server.h"
 #include "ServerUtils.h"
@@ -182,6 +183,14 @@ namespace ggk {
 
 // Our one and only server. It's global.
 std::shared_ptr<Server> TheServer = nullptr;
+
+// Our string, have two for different strings
+// RACE?
+
+// Received Data
+std::vector<std::vector<uint8_t>> receivedData;
+std::size_t expectedSize = 0;
+std::size_t messagesReceived = 0;
 
 // ---------------------------------------------------------------------------------------------------------------------------------
 // Object implementation
@@ -292,9 +301,59 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 		{
 			// Update the text string value
 			GVariant *pAyBuffer = g_variant_get_child_value(pParameters, 0);
-			std::cout << "GOT STRING: " << Utils::stringFromGVariantByteArray(pAyBuffer).c_str() << std::endl;
+			gsize size;
+			gconstpointer pPtr = g_variant_get_fixed_array(const_cast<GVariant *>(pAyBuffer), &size, 1);
+			
+			// Now we can get first byte and 
+			auto bufferPtr = reinterpret_cast<const uint8_t*>(pPtr);
+			uint8_t messageIndex = *bufferPtr;
+			std::vector<uint8_t> message(size-1);
+			memcpy(message.data(), bufferPtr+1, size-1);
+			std::cout << "Got DATA! Idx: " << int(messageIndex) << ", Len: " << message.size() <<  std::endl;
 
-			//self.setDataPointer("uart_rx", Utils::stringFromGVariantByteArray(pAyBuffer).c_str());
+			// If our string is '0', that means start. This is arabic.
+			if (0 == messageIndex){
+				std::cout << "Got START message." << std::endl;
+				// Message length should be 1
+				if(message.size() != 1){
+					std::cout << "Got bad length first message!" << std::endl;
+				}
+				else {
+				// Clear received data
+				expectedSize = message[0];
+				messagesReceived = 0;
+				std::cout << "Received START! Set Message Count: " << int(expectedSize) << std::endl;
+				receivedData.clear();
+				receivedData.resize(expectedSize);
+				}
+			}
+			else {
+				std::cout << "Got DATA message." << std::endl;
+				const uint8_t dataMessageIndex = messageIndex - 1;
+
+				// Verify size.
+				if (dataMessageIndex < receivedData.size())
+				{
+					receivedData[messageIndex - 1] = message;
+					++messagesReceived;
+
+					if(messagesReceived >= expectedSize){
+						std::cout << "Finished!" << std::endl;
+						// We finished receivng data.. Construct the main string
+
+						std::vector<uint8_t> outputData;
+						for (const auto& element : receivedData)
+						{
+							// TODO: Optimize, prevent resizes.
+							outputData.insert(outputData.end(), element.begin(), element.end());
+						}
+						self.setDataPointer("image_buffer", &outputData);	
+					}
+				} else {
+					std::cout << "Got message at invalid index! Idx: " << int(dataMessageIndex) << ". Arr size: " << receivedData.size() << std::endl;
+				}
+
+			}
 
 			// Since all of these methods (onReadValue, onWriteValue, onUpdateValue) are all part of the same
 			// Characteristic interface (which just so happens to be the same interface passed into our self
