@@ -184,8 +184,7 @@ namespace ggk {
 // Our one and only server. It's global.
 std::shared_ptr<Server> TheServer = nullptr;
 
-// Our string, have two for different strings
-// RACE?
+std::string globalServiceID = "923574a3-41a8-4aea-ae77-7ce14d9dca3b";
 
 // Received Data
 std::vector<std::vector<uint8_t>> receivedData;
@@ -244,8 +243,12 @@ Server::Server(const std::string &serviceName, const std::string &advertisingNam
 	enableSecureConnection = false;
 	enableConnectable = true;
 	enableDiscoverable = true;
-	enableAdvertising = true;
 	enableBondable = false;
+
+	// Cannot enable these two at the same time
+	enableRawAdvertising = false;
+	enableAdvancedAdvertising = true;
+	advertisedUUID = globalServiceID;
 
 	//
 	// Define the server

@@ -78,7 +78,13 @@ struct Server
 	bool getEnableDiscoverable() const { return enableDiscoverable; }
 
 	// Returns the requested setting the LE advertising state (true = enabled, false = disabled)
-	bool getEnableAdvertising() const { return enableAdvertising; }
+	bool getEnableRawAdvertising() const { return enableRawAdvertising; }
+
+	// Returns the requested setting the LE advertising state (true = enabled, false = disabled)
+	bool getEnableAdvancedAdvertising() const { return enableAdvancedAdvertising; }
+
+	// Returns the requested setting the LE advertising state (true = enabled, false = disabled)
+	std::string getAdvertisedUUID() const { return advertisedUUID; }
 
 	// Returns the requested setting the bondable state (true = enabled, false = disabled)
 	bool getEnableBondable() const { return enableBondable; }
@@ -198,10 +204,14 @@ private:
 	bool enableDiscoverable;
 
 	// LE advertising requested state
-	bool enableAdvertising;
+	bool enableRawAdvertising;
 
 	// Bondable requested state
 	bool enableBondable;
+
+	// Specific Advertising
+	bool enableAdvancedAdvertising;
+	std::string advertisedUUID;
 
 	// The getter callback that is responsible for returning current server data that is shared over Bluetooth
 	GGKServerDataGetter dataGetter;

@@ -686,7 +686,7 @@ void configureAdapter()
 	bool bnFlag = info.currentSettings.isSet(HciAdapter::EHciBondable) == TheServer->getEnableBondable();
 	bool cnFlag = info.currentSettings.isSet(HciAdapter::EHciConnectable) == TheServer->getEnableConnectable();
 	bool diFlag = info.currentSettings.isSet(HciAdapter::EHciDiscoverable) == TheServer->getEnableDiscoverable();
-	bool adFlag = info.currentSettings.isSet(HciAdapter::EHciAdvertising) == TheServer->getEnableAdvertising();
+	bool adFlag = info.currentSettings.isSet(HciAdapter::EHciAdvertising) == TheServer->getEnableRawAdvertising();
 	bool anFlag = (advertisingName.length() == 0 || advertisingName == info.name) && (advertisingShortName.length() == 0 || advertisingShortName == info.shortName);
 
 	// If everything is setup already, we're done
@@ -746,8 +746,8 @@ void configureAdapter()
 		// Change the Advertising state?
 		if (!adFlag)
 		{
-			Logger::debug(SSTR << (TheServer->getEnableAdvertising() ? "Enabling":"Disabling") << " Advertising");
-			if (!mgmt.setAdvertising(TheServer->getEnableAdvertising() ? 1 : 0)) { setRetry(); return; }
+			Logger::debug(SSTR << (TheServer->getEnableRawAdvertising() ? "Enabling":"Disabling") << " Advertising");
+			if (!mgmt.setAdvertising(TheServer->getEnableRawAdvertising() ? 1 : 0)) { setRetry(); return; }
 		}
 
 		// Set the name?
@@ -760,6 +760,13 @@ void configureAdapter()
 		// Turn it back on
 		Logger::debug("Powering on");
 		if (!mgmt.setPowered(true)) { setRetry(); return; }
+	}
+
+	// Advanced advertising...
+	if(TheServer->getEnableAdvancedAdvertising())
+	{
+		mgmt.setAdvertising(0);
+		mgmt.addAdvertising(advertisingShortName, reinterpret_cast<const uint8_t*>(TheServer->getAdvertisedUUID().data()));
 	}
 
 	Logger::info("The Bluetooth adapter is fully configured");
